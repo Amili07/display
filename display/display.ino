@@ -6,6 +6,8 @@
 #define LED_C 4
 #define LED_D 3
 #define LED_E 2
+#define DISP_TENS 12
+#define DISP_ONES 13
 
 void setup() {
   pinMode(LED_A, OUTPUT);
@@ -15,6 +17,23 @@ void setup() {
   pinMode(LED_C, OUTPUT);
   pinMode(LED_D, OUTPUT);
   pinMode(LED_E, OUTPUT);
+  pinMode(DISP_ONES, OUTPUT);
+  pinMode(DISP_TENS, OUTPUT);
+  digitalWrite(DISP_ONES, LOW);
+  digitalWrite(DISP_TENS, LOW);
+}
+
+void visaEttor(int num){
+  digitalWrite(DISP_ONES, HIGH);
+  digitalWrite(DISP_TENS, LOW);
+  visaNummer(num);
+  
+}
+
+void visaTior(int nums){
+digitalWrite(DISP_TENS, HIGH);
+  digitalWrite(DISP_ONES, LOW);
+  visaNummer(nums);
 }
 
 void visaNummer(int nummer) {
@@ -40,11 +59,23 @@ void visaNummer(int nummer) {
     digitalWrite(pinnar[i], siffror[nummer][i] ? LOW : HIGH);
   }
 }
+#define PAUS 10
 
 void loop() {
-  for (int i = 1; i <= 9; i++) {
-    visaNummer(i);
-    delay(1000);
+  for (int tal = 0; tal <= 99; tal++) {
+
+    int tiotal = tal / 10;
+    int ental = tal % 10;
+
+    unsigned long start = millis();
+
+    while (millis() - start < 1000) {
+      visaTior(tiotal);
+      delay(PAUS);
+
+      visaEttor(ental);
+      delay(PAUS);
+    }
   }
 }
 
