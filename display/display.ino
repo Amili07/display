@@ -9,6 +9,7 @@
 #define DISP_TENS 12
 #define DISP_ONES 13
 
+
 void setup() {
   pinMode(LED_A, OUTPUT);
   pinMode(LED_B, OUTPUT);
