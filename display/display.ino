@@ -60,10 +60,22 @@ void visaNummer(int nummer) {
   }
 }
 #define PAUS 10
+
 void loop() {
-  visaEttor(8);
-  delay(PAUS);
-  visaTior(1);
-  delay(PAUS);
+  for (int tal = 0; tal <= 99; tal++) {
+
+    int tiotal = tal / 10;
+    int ental = tal % 10;
+
+    unsigned long start = millis();
+
+    while (millis() - start < 1000) {
+      visaTior(tiotal);
+      delay(PAUS);
+
+      visaEttor(ental);
+      delay(PAUS);
+    }
+  }
 }
 
