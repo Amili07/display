@@ -1,17 +1,19 @@
 #define LED_A 7
 #define LED_B 8
-#define LED_F 6
-#define LED_G 5
 #define LED_C 4
 #define LED_D 3
 #define LED_E 2
+#define LED_F 6
+#define LED_G 5
 
 #define DISP_TENS 12
 #define DISP_ONES 13
 
-#define KNAPP 11
-#define KNAPP_PLUS 9
-#define KNAPP_MINUS 10
+#define KNAPP_MINUS_1   1
+#define KNAPP_MINUS_10  0
+#define KNAPP_PLUS_1    9
+#define KNAPP_PLUS_10  10
+#define KNAPP_START    11
 
 const byte pinnar[7] = {
   LED_A, LED_B, LED_C, LED_D, LED_E, LED_F, LED_G
@@ -33,7 +35,6 @@ const byte siffror[10][7] = {
 const unsigned long debounceTid = 30;
 const unsigned long dubbelklickTid = 350;
 
-// Varje knapp håller reda på sitt eget tillstånd.
 struct Knapp {
   byte pinne;
   int senasteLasning;
@@ -48,7 +49,7 @@ struct Knapp {
       senasteAndring = nu;
     }
 
-    if (nu - senasteAndring >= debounceTid && lasning != stabilStatus) {
+    if (lasning != stabilStatus && nu - senasteAndring >= debounceTid) {
       stabilStatus = lasning;
       return stabilStatus == LOW;
     }
@@ -57,19 +58,21 @@ struct Knapp {
   }
 };
 
-Knapp startknapp = {KNAPP, HIGH, HIGH, 0};
-Knapp plusknapp  = {KNAPP_PLUS, HIGH, HIGH, 0};
-Knapp minusknapp = {KNAPP_MINUS, HIGH, HIGH, 0};
-
-bool timerIgang = false;
-bool vantarPaAndraKlick = false;
-bool visaTiotal = true;
+Knapp minusEtt   = {KNAPP_MINUS_1,  HIGH, HIGH, 0};
+Knapp minusTio   = {KNAPP_MINUS_10, HIGH, HIGH, 0};
+Knapp plusEtt    = {KNAPP_PLUS_1,   HIGH, HIGH, 0};
+Knapp plusTio    = {KNAPP_PLUS_10,  HIGH, HIGH, 0};
+Knapp startknapp = {KNAPP_START,    HIGH, HIGH, 0};
 
 int tal = 0;
-unsigned long forstaKlick = 0;
+bool timerIgang = false;
+bool visaTiotal = true;
+bool vantarPaAndraKlick = false;
+
 unsigned long senasteLoop = 0;
 unsigned long sparadTid = 0;
 unsigned long senasteDisplay = 0;
+unsigned long forstaKlick = 0;
 
 void setup() {
   for (byte i = 0; i < 7; i++) {
@@ -82,11 +85,18 @@ void setup() {
   digitalWrite(DISP_TENS, LOW);
   digitalWrite(DISP_ONES, LOW);
 
-  pinMode(KNAPP, INPUT_PULLUP);
-  pinMode(KNAPP_PLUS, INPUT_PULLUP);
-  pinMode(KNAPP_MINUS, INPUT_PULLUP);
+  pinMode(KNAPP_MINUS_1, INPUT_PULLUP);
+  pinMode(KNAPP_MINUS_10, INPUT_PULLUP);
+  pinMode(KNAPP_PLUS_1, INPUT_PULLUP);
+  pinMode(KNAPP_PLUS_10, INPUT_PULLUP);
+  pinMode(KNAPP_START, INPUT_PULLUP);
 
   senasteLoop = millis();
+}
+
+void andraTal(int steg) {
+  // Displayen går runt mellan 00 och 99.
+  tal = (tal + steg + 100) % 100;
 }
 
 void visaNummer(int nummer) {
@@ -105,20 +115,17 @@ void loop() {
 
     while (sparadTid >= 1000) {
       sparadTid -= 1000;
-      tal = (tal + 1) % 100;
+      andraTal(1);
     }
   }
 
-  // D9 och D10 ändrar talet ett steg per tryck.
-  if (plusknapp.nyttTryck(nu)) {
-    tal = (tal + 1) % 100;
-  }
+  // Ett steg per tryck, även när timern är pausad.
+  if (minusEtt.nyttTryck(nu)) andraTal(-1);  // D1
+  if (minusTio.nyttTryck(nu)) andraTal(-10); // D0
+  if (plusEtt.nyttTryck(nu))  andraTal(1);   // D9
+  if (plusTio.nyttTryck(nu))  andraTal(10);  // D10
 
-  if (minusknapp.nyttTryck(nu)) {
-    tal = (tal + 99) % 100; // Ett steg bakåt, även från 00 till 99.
-  }
-
-  // Ett ensamt klick på D11 startar eller pausar timern.
+  // Ett enkelklick på D11 startar eller pausar.
   if (vantarPaAndraKlick && nu - forstaKlick > dubbelklickTid) {
     timerIgang = !timerIgang;
     vantarPaAndraKlick = false;
@@ -126,7 +133,7 @@ void loop() {
 
   if (startknapp.nyttTryck(nu)) {
     if (vantarPaAndraKlick) {
-      // Andra klicket kom i tid. Nollställ och pausa.
+      // Dubbelklick nollställer och pausar.
       tal = 0;
       sparadTid = 0;
       timerIgang = false;
@@ -137,9 +144,9 @@ void loop() {
     }
   }
 
-  // Växla mellan tiotal och ental var femte millisekund.
   if (nu - senasteDisplay >= 5) {
     senasteDisplay = nu;
+
     digitalWrite(DISP_TENS, LOW);
     digitalWrite(DISP_ONES, LOW);
 
