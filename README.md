@@ -1,155 +1,27 @@
-Arduino – 7-segmentsdisplay (1–9)
-Beskrivning
-Projektet använder en Arduino för att visa siffrorna 1 till 9 på en 7-segmentsdisplay. Varje siffra visas i en sekund. Efter 9 börjar räkningen om från 1.
+# Arduino · Tvåsiffrig displaytimer
 
-Koden nedan utgår från att displayens segment tänds med LOW (common anode), vilket var det som fungerade i ert test.
-Kopplingar
-Segment	Arduino-pin
-A	7
-B	8
-C	4
-D	3
-E	2
-F	6
-G	5
+Tre knappar styr ett tal mellan **00 och 99** på en sjusegmentsdisplay. Ställ in tiden med plus och minus och starta nedräkningen. När den automatiska nedräkningen når **00** stannar timern och spelar en slutton i **1,5 sekunder**.
 
+## Från lysdiod till timer
 
-Viktigt: Använd ett lämpligt strömbegränsningsmotstånd i serie med varje LED-segment. Displayens gemensamma ben måste kopplas enligt displayens datablad. Koppla inte displayens gemensamma ben på måfå.
-Kod 1 – Testa ett segment (A)
-Den här koden ska tända endast segment A. För er fungerande testkoppling tänds segmentet med LOW.
-#define LED_A 7
-#define LED_B 8
-#define LED_F 6
-#define LED_G 5
-#define LED_C 4
-#define LED_D 3
-#define LED_E 2
+Projektet började med en knapp som tände och släckte en lysdiod. Därefter byggde vi en timer med två siffror, lade till knappar för att justera talet och kopplade in en högtalare. I den senaste versionen går det också att dubbelklicka på plus eller minus för att räkna automatiskt med dubbel hastighet.
 
-void setup() {
-  pinMode(LED_A, OUTPUT);
-  pinMode(LED_B, OUTPUT);
-  pinMode(LED_F, OUTPUT);
-  pinMode(LED_G, OUTPUT);
-  pinMode(LED_C, OUTPUT);
-  pinMode(LED_D, OUTPUT);
-  pinMode(LED_E, OUTPUT);
-}
+## Så använder du knapparna
 
-void loop() {
-  digitalWrite(LED_A, LOW);   // Tänd A
-  digitalWrite(LED_B, HIGH);  // Släck B
-  digitalWrite(LED_F, HIGH);  // Släck F
-  digitalWrite(LED_G, HIGH);  // Släck G
-  digitalWrite(LED_C, HIGH);  // Släck C
-  digitalWrite(LED_D, HIGH);  // Släck D
-  digitalWrite(LED_E, HIGH);  // Släck E
-}
-Kod 2 – Testa ett segment i taget
-Den här koden tänder A, B, C, D, E, F och G ett i taget. Kontrollera att varje fysisk del av displayen motsvarar rätt segment.
-#define LED_A 7
-#define LED_B 8
-#define LED_F 6
-#define LED_G 5
-#define LED_C 4
-#define LED_D 3
-#define LED_E 2
+| Knapp | Ett klick | Dubbelklick | Håll inne |
+| --- | --- | --- | --- |
+| Start/paus · D1 | Starta, pausa eller fortsätt | Nollställ till 00 och tysta tonen | Ett start- eller pauskommando |
+| Plus · D9 | Öka med 1, upp till 99 | Räkna upp automatiskt med två steg per sekund | Öka upprepade gånger till 99 |
+| Minus · D10 | Minska med 1. Från 00 går du till 99 | Räkna ned automatiskt med två steg per sekund | Minska upprepade gånger, även förbi 00 till 99 |
 
-int pinnar[] = {
-  LED_A, LED_B, LED_C, LED_D,
-  LED_E, LED_F, LED_G
-};
+Vid uppstart visar displayen **00**. Startar du därifrån börjar nedräkningen på **99**. Ett klick på start/paus under snabbräkning pausar den. Nästa klick fortsätter i samma riktning och hastighet.
 
-void setup() {
-  for (int i = 0; i < 7; i++) {
-    pinMode(pinnar[i], OUTPUT);
-    digitalWrite(pinnar[i], HIGH); // Släck alla
-  }
-}
+## Prova projektet
 
-void loop() {
-  for (int i = 0; i < 7; i++) {
-    for (int j = 0; j < 7; j++) {
-      digitalWrite(pinnar[j], HIGH); // Släck alla segment
-    }
+1. Koppla display, knappar och ljudutgång enligt [kopplingstabellen i specifikationen](Specifikation.md#koppling).
+2. Öppna den senaste timerskissen i Arduino IDE, välj kort och port och ladda upp. Om uppladdningen misslyckas på ett kort där D1 används för seriell kommunikation kan du lossa startknappens sladd från D1 under uppladdningen.
+3. Ställ in **03** med tre separata tryck på plus. Vänta minst en halv sekund mellan trycken så att de registreras som enkelklick.
+4. Tryck en gång på D1. Displayen går från **03** via **02** och **01** till **00**. Då hörs sluttonen och displayen står kvar på **00**.
+5. Dubbelklicka på plus. Displayen räknar nu upp ett steg varje halvsekund. Tryck på D1 för att pausa.
 
-    digitalWrite(pinnar[i], LOW); // Tänd ett segment
-    delay(1000);
-  }
-}
-Kod 3 – Visa siffrorna 1 till 9
-Det här är huvudprogrammet. Displayen visar varje siffra i en sekund och börjar sedan om från 1.
-#define LED_A 7
-#define LED_B 8
-#define LED_F 6
-#define LED_G 5
-#define LED_C 4
-#define LED_D 3
-#define LED_E 2
-
-void setup() {
-  pinMode(LED_A, OUTPUT);
-  pinMode(LED_B, OUTPUT);
-  pinMode(LED_F, OUTPUT);
-  pinMode(LED_G, OUTPUT);
-  pinMode(LED_C, OUTPUT);
-  pinMode(LED_D, OUTPUT);
-  pinMode(LED_E, OUTPUT);
-}
-
-void visaNummer(int nummer) {
-  // Segmentordning: A, B, C, D, E, F, G
-  // 1 = segmentet ska lysa, 0 = segmentet ska vara släckt.
-  const byte siffror[10][7] = {
-    {1,1,1,1,1,1,0}, // 0
-    {0,1,1,0,0,0,0}, // 1
-    {1,1,0,1,1,0,1}, // 2
-    {1,1,1,1,0,0,1}, // 3
-    {0,1,1,0,0,1,1}, // 4
-    {1,0,1,1,0,1,1}, // 5
-    {1,0,1,1,1,1,1}, // 6
-    {1,1,1,0,0,0,0}, // 7
-    {1,1,1,1,1,1,1}, // 8
-    {1,1,1,1,0,1,1}  // 9
-  };
-
-  int pinnar[7] = {
-    LED_A, LED_B, LED_C, LED_D,
-    LED_E, LED_F, LED_G
-  };
-
-  for (int i = 0; i < 7; i++) {
-    // Common anode: LOW tänder och HIGH släcker.
-    digitalWrite(pinnar[i], siffror[nummer][i] ? LOW : HIGH);
-  }
-}
-
-void loop() {
-  for (int i = 1; i <= 9; i++) {
-    visaNummer(i);
-    delay(1000);
-  }
-}
-Så fungerar huvudprogrammet
-- setup() ställer in alla sju segment som utgångar.
-- visaNummer() väljer vilka segment som ska lysa för den valda siffran.
-- Segmentordningen i tabellen är A, B, C, D, E, F, G.
-- Eftersom displayen tänds med LOW, skickar programmet LOW till segment som ska lysa och HIGH till segment som ska vara släckta.
-- loop() visar siffrorna 1–9 med en sekunds paus och börjar sedan om.
-Ladda upp koden
-1. Öppna Arduino IDE.
-2. Välj en av koderna ovan och kopiera hela kodblocket till en ny .ino-fil.
-3. Anslut Arduino via USB.
-4. Välj rätt kort under Tools → Board.
-5. Välj rätt port under Tools → Port.
-6. Klicka på Verify och sedan Upload.
-Felsökning
-- Om fel segment lyser: kontrollera att displayens ben verkligen är kopplade till A–G enligt er displaymodell.
-- Om segmenten lyser omvänt: kontrollera displaytypen och om den ska styras med LOW eller HIGH.
-- Om slumpmässiga segment lyser: kontrollera gemensam anslutning, kablar, kopplingsdäck och motstånd.
-- Om ett segment inte lyser: kontrollera dess kabel, motstånd och displayens ben.
-Krav
-- Arduino-kompatibelt kort
-- 7-segmentsdisplay
-- Kopplingsdäck och jumperkablar
-- Ett lämpligt strömbegränsningsmotstånd per LED-segment
-- USB-kabel
+[Öppna den tekniska specifikationen och testfallen](Specifikation.md)
